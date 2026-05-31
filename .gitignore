@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Build artifacts
+*.zip
+*.crx
+*.pem
+
+# Editors
+.vscode/
+.idea/
+*.swp

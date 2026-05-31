@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Welcome to Anki Flashcard Creator</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f8fa;
+        --panel: #ffffff;
+        --fg: #1a1a1a;
+        --muted: #555;
+        --border: #d0d4da;
+        --input-bg: #ffffff;
+        --code-bg: #f1f3f6;
+        --link: #2563eb;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --success: #1f7a3a;
+        --error: #c0392b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #161618;
+          --panel: #1f1f22;
+          --fg: #f2f2f5;
+          --muted: #b4b4bb;
+          --border: #4a4a52;
+          --input-bg: #2a2a2e;
+          --code-bg: #2a2a2e;
+          --link: #7aa7ff;
+          --accent: #3b82f6;
+          --accent-hover: #60a5fa;
+          --success: #5fd38a;
+          --error: #ff6b6b;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: var(--fg); background: var(--bg);
+        margin: 0; padding: 48px 16px;
+      }
+      .wrap { max-width: 640px; margin: 0 auto; }
+      .hero {
+        display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+      }
+      .hero img { width: 64px; height: 64px; border-radius: 14px; }
+      h1 { font-size: 26px; margin: 0; }
+      .tagline { color: var(--muted); margin-top: 4px; font-size: 14px; }
+      .step {
+        background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+        padding: 20px; margin-bottom: 16px;
+      }
+      .step h2 { margin: 0 0 6px 0; font-size: 16px; display: flex; align-items: center; gap: 10px; }
+      .step-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 50%;
+        background: var(--accent); color: #fff; font-size: 13px; font-weight: 600;
+      }
+      .step.done .step-num::before { content: "✓"; }
+      .step.done .step-num { background: var(--success); }
+      .step.done .step-num span { display: none; }
+      .step p { margin: 8px 0 12px 0; color: var(--muted); }
+      .step a { color: var(--link); }
+      code { background: var(--code-bg); color: var(--fg); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+      input[type="password"], input[type="text"], select {
+        width: 100%; padding: 9px; border: 1px solid var(--border);
+        border-radius: 6px; font: inherit; color: var(--fg); background: var(--input-bg);
+        margin-bottom: 8px;
+      }
+      input[type="checkbox"] { width: auto; }
+      button {
+        font: inherit; padding: 9px 16px; border-radius: 6px;
+        background: var(--accent); color: #fff; border: 0; cursor: pointer;
+      }
+      button:hover { background: var(--accent-hover); }
+      button.secondary {
+        background: transparent; color: var(--fg); border: 1px solid var(--border);
+      }
+      button.secondary:hover { background: var(--code-bg); }
+      button:disabled { opacity: 0.6; cursor: default; }
+      .status {
+        font-size: 13px; margin-top: 8px;
+        min-height: 18px;
+      }
+      .status[data-kind="success"] { color: var(--success); }
+      .status[data-kind="error"] { color: var(--error); }
+      .status[data-kind="info"] { color: var(--muted); }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+      .footer { margin-top: 32px; text-align: center; color: var(--muted); font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <img src="icons/icon128.png" alt="" />
+        <div>
+          <h1>Welcome to Anki Flashcard Creator</h1>
+          <div class="tagline">Highlight any text → AI suggests a flashcard → Save to Anki.</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-ankiconnect">
+        <h2><span class="step-num"><span>1</span></span> Install AnkiConnect in Anki</h2>
+        <p>AnkiConnect is the bridge between your browser and Anki. In Anki desktop: <strong>Tools → Add-ons → Get Add-ons</strong>, paste the code <code>2055492159</code>, then restart Anki.</p>
+        <div class="row">
+          <button class="secondary" id="open-ankiconnect">Open AnkiConnect page</button>
+          <button id="confirm-ankiconnect">I've installed it</button>
+        </div>
+      </div>
+
+      <div class="step" id="step-permission">
+        <h2><span class="step-num"><span>2</span></span> Connect this extension to Anki</h2>
+        <p>This grants the extension permission to save cards to Anki. Make sure Anki is open, then click below — a popup will appear inside Anki asking you to approve. Click Yes.</p>
+        <div class="row">
+          <button id="grant-permission">Connect to Anki</button>
+        </div>
+        <div class="status" id="permission-status" data-kind="info"></div>
+      </div>
+
+      <div class="step" id="step-ai">
+        <h2><span class="step-num"><span>3</span></span> Pick your AI provider</h2>
+        <p>How should we generate flashcard suggestions from your highlights?</p>
+        <select id="provider">
+          <option value="gemini-api">Gemini API (cloud, Gemini 2.5 Flash — best quality, free tier with daily limits)</option>
+          <option value="chrome-builtin">Chrome Built-in (Gemini Nano, local — unlimited, lower quality)</option>
+        </select>
+        <div id="gemini-fields">
+          <input id="key" type="password" placeholder="AIza... (paste your Gemini API key)" />
+          <div class="status" data-kind="info">
+            Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>.
+          </div>
+        </div>
+        <div id="builtin-fields" style="display:none;">
+          <div class="status" data-kind="info">
+            Requires Chrome 138+, ~22GB free disk, GPU with 4GB+ VRAM. Enable both:
+            <code>chrome://flags/#prompt-api-for-gemini-nano</code> and
+            <code>chrome://flags/#optimization-guide-on-device-model</code>, then restart Chrome.
+            First card generation will download a ~2GB model.
+          </div>
+        </div>
+        <div class="row" style="margin-top: 10px;">
+          <button id="save-ai">Save</button>
+        </div>
+        <div class="status" id="ai-status" data-kind="info"></div>
+      </div>
+
+      <div class="step" id="step-prefs">
+        <h2><span class="step-num"><span>4</span></span> Preferences (optional)</h2>
+        <div class="toggle-row">
+          <input id="floating" type="checkbox" checked />
+          <label for="floating">Show a floating "+" button when I highlight text</label>
+        </div>
+        <p style="margin-top: 12px;">Keyboard shortcut: <code>⌘⇧A</code> (Mac) or <code>Ctrl+Shift+A</code> (Win/Linux). Rebind at <code>chrome://extensions/shortcuts</code>.</p>
+      </div>
+
+      <div class="step" id="step-done">
+        <h2><span class="step-num"><span>5</span></span> Try it</h2>
+        <p>Open any article. Highlight a sentence. Right-click → "Create Anki flashcard from selection", or use the keyboard shortcut, or click the floating "+" button.</p>
+        <div class="row">
+          <button id="close-welcome">Done</button>
+          <a href="options.html" style="margin-left: 4px;">Open settings</a>
+        </div>
+      </div>
+
+      <div class="footer">
+        Your highlighted text is sent to your chosen AI provider for card generation. See the <a href="PRIVACY.md" target="_blank">privacy policy</a> for details.
+      </div>
+    </div>
+    <script src="welcome.js"></script>
+  </body>
+</html>

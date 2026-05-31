@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Anki Flashcard Creator — Options</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #1a1a1a;
+        --muted: #555;
+        --border: #d0d4da;
+        --input-bg: #ffffff;
+        --code-bg: #f1f3f6;
+        --link: #2563eb;
+        --status-success: #1f7a3a;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1c1c1e;
+          --fg: #f2f2f5;
+          --muted: #b4b4bb;
+          --border: #4a4a52;
+          --input-bg: #2a2a2e;
+          --code-bg: #2a2a2e;
+          --link: #7aa7ff;
+          --status-success: #5fd38a;
+          --accent: #3b82f6;
+          --accent-hover: #60a5fa;
+        }
+      }
+      body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--fg); background: var(--bg); max-width: 560px; margin: 32px auto; padding: 0 16px; }
+      a { color: var(--link); }
+      h1 { font-size: 18px; margin-bottom: 4px; }
+      h2 { font-size: 14px; margin-top: 24px; }
+      .row { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+      label { font-weight: 600; font-size: 13px; }
+      input, select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; background: var(--input-bg); color: var(--fg); }
+      input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.25); }
+      .hint { font-size: 12px; color: var(--muted); }
+      button { background: var(--accent); color: #fff; border: 0; padding: 8px 14px; border-radius: 6px; cursor: pointer; font: inherit; }
+      button:hover { background: var(--accent-hover); }
+      .status { margin-left: 10px; font-size: 13px; color: var(--status-success); }
+      code { background: var(--code-bg); color: var(--fg); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+      ul { font-size: 13px; padding-left: 18px; }
+    </style>
+  </head>
+  <body>
+    <h1>Anki Flashcard Creator</h1>
+    <div class="hint">Settings sync across your Chrome profile. <a href="welcome.html">Re-run welcome / setup</a>.</div>
+
+    <h2>AI provider</h2>
+    <div class="row">
+      <label for="provider">Provider</label>
+      <select id="provider">
+        <option value="gemini-api">Gemini API (cloud, Gemini 2.5 Flash)</option>
+        <option value="chrome-builtin">Chrome Built-in (local, Gemini Nano — unlimited)</option>
+      </select>
+      <div class="hint" id="provider-hint"></div>
+    </div>
+
+    <div class="row" id="gemini-key-row">
+      <label for="key">Gemini API key</label>
+      <input id="key" type="password" placeholder="AIza..." />
+      <div class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>. The free tier has daily rate limits — if you hit them often, switch to Chrome Built-in above.</div>
+    </div>
+
+    <h2>Anki note type</h2>
+    <div class="row">
+      <label for="model">Model (note type)</label>
+      <input id="model" type="text" placeholder="Basic" />
+      <div class="hint">Default <code>Basic</code> works out of the box. Must have <code>Front</code> and <code>Back</code> fields.</div>
+    </div>
+
+    <h2>Quick capture</h2>
+    <div class="row" style="flex-direction: row; align-items: center; gap: 10px;">
+      <input id="floating" type="checkbox" style="width: auto;" />
+      <label for="floating" style="font-weight: 500;">Show floating "+" button when text is selected</label>
+    </div>
+    <div class="hint">Keyboard shortcut: <code>⌘⇧A</code> on Mac, <code>Ctrl+Shift+A</code> on Windows/Linux. Change it at <code>chrome://extensions/shortcuts</code>.</div>
+
+    <div class="row" style="flex-direction: row; align-items: center;">
+      <button id="save">Save</button>
+      <span id="status" class="status"></span>
+    </div>
+
+    <h2>Setup checklist</h2>
+    <ul>
+      <li>Install <a href="https://ankiweb.net/shared/info/2055492159" target="_blank" rel="noreferrer">AnkiConnect</a> in Anki (Tools → Add-ons → Get Add-ons → <code>2055492159</code>), then restart Anki.</li>
+      <li>In AnkiConnect's config, add your extension origin to <code>webCorsOriginList</code>. Your extension origin is shown below — copy it into the list.</li>
+      <li>Keep Anki desktop open while saving cards. They sync to AnkiWeb/mobile normally.</li>
+    </ul>
+
+    <div class="row">
+      <label>Your extension origin (copy this into AnkiConnect's <code>webCorsOriginList</code>)</label>
+      <input id="origin" type="text" readonly />
+    </div>
+  </body>
+  <script src="options.js"></script>
+</html>
