@@ -2,6 +2,10 @@
 
 Chrome extension. Highlight text on any web page → right-click "Create Anki flashcard" (or press the shortcut, or click the floating "+" button) → review an AI-suggested Front/Back with a deck picker → Save. Cards land in your Anki desktop install and sync to mobile via AnkiWeb.
 
+## Demo
+
+[![Watch the demo](https://img.youtube.com/vi/tZIdMCNvHdA/maxresdefault.jpg)](https://www.youtube.com/watch?v=tZIdMCNvHdA)
+
 ## Features
 
 - Highlight → right-click → AI suggests question + answer
