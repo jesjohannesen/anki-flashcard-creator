@@ -1,3 +1,5 @@
+importScripts("shared.js");
+
 const MENU_ID = "create-anki-flashcard";
 const ANKI_URL = "http://127.0.0.1:8765";
 const GEMINI_MODEL = "gemini-2.5-flash";
@@ -294,12 +296,3 @@ async function ankiInvoke(action, params = {}) {
   return data.result;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  }[c]));
-}
