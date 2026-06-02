@@ -283,9 +283,14 @@ async function saveCard({ front, back, deckName, tags, sourceUrl }) {
     options: { allowDuplicate: false, duplicateScope: "deck" },
     tags: tags && tags.length ? tags : ["web-clip"],
   };
-  const id = await ankiInvoke("addNote", { note });
-  if (id == null) {
-    return { error: "Duplicate card — a note with the same Front field already exists in this deck." };
+  let id;
+  try {
+    id = await ankiInvoke("addNote", { note });
+  } catch (e) {
+    if (/duplicate/i.test(e.message)) {
+      return { error: "Duplicate card — a note with the same Front field already exists in this deck." };
+    }
+    throw e;
   }
   return { noteId: id };
 }
