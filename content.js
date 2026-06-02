@@ -144,7 +144,15 @@
     closeBtn.addEventListener("click", () => host.remove());
 
     const sendMsg = (msg) =>
-      new Promise((resolve) => chrome.runtime.sendMessage(msg, (r) => resolve(r)));
+      new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(msg, (r) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(r);
+          }
+        });
+      });
 
     const populateDecks = (decks, preselect) =>
       new Promise((resolve) => {
@@ -168,7 +176,13 @@
       });
 
     const loadDecksForCurrentProfile = async (preselect) => {
-      const resp = await sendMsg({ type: "GET_DECKS" });
+      let resp;
+      try {
+        resp = await sendMsg({ type: "GET_DECKS" });
+      } catch (e) {
+        setStatus(status, `Extension error: ${e.message}. Try reopening the panel.`, "error");
+        return [];
+      }
       if (resp?.error) {
         setStatus(status, `Anki not reachable: ${resp.error}. Is Anki open with AnkiConnect installed?`, "error");
         return [];
@@ -189,10 +203,18 @@
       saveBtn.disabled = true;
       regenBtn.disabled = true;
       deckHint.textContent = "";
-      const resp = await sendMsg({
-        type: "GENERATE_CARD",
-        payload: { selectionText, context, pageTitle, pageUrl, deckNames: decks },
-      });
+      let resp;
+      try {
+        resp = await sendMsg({
+          type: "GENERATE_CARD",
+          payload: { selectionText, context, pageTitle, pageUrl, deckNames: decks },
+        });
+      } catch (e) {
+        saveBtn.disabled = false;
+        regenBtn.disabled = false;
+        setStatus(status, `Extension error: ${e.message}. Try reopening the panel.`, "error");
+        return;
+      }
       saveBtn.disabled = false;
       regenBtn.disabled = false;
       if (!resp || resp.error) {
@@ -212,7 +234,13 @@
     profile.addEventListener("change", async () => {
       const newProfile = profile.value;
       setStatus(status, `Switching profile to ${newProfile}…`, "info");
-      const resp = await sendMsg({ type: "SWITCH_PROFILE", payload: { name: newProfile } });
+      let resp;
+      try {
+        resp = await sendMsg({ type: "SWITCH_PROFILE", payload: { name: newProfile } });
+      } catch (e) {
+        setStatus(status, `Extension error: ${e.message}. Try reopening the panel.`, "error");
+        return;
+      }
       if (resp?.error) {
         setStatus(status, `Profile switch failed: ${resp.error}`, "error");
         return;
@@ -245,16 +273,23 @@
       saveBtn.disabled = true;
       setStatus(status, "Saving to Anki…", "info");
       const host_tag = hostnameTag(pageUrl);
-      const resp = await sendMsg({
-        type: "SAVE_CARD",
-        payload: {
-          front: f,
-          back: b,
-          deckName: d,
-          tags: ["web-clip", host_tag].filter(Boolean),
-          sourceUrl: pageUrl,
-        },
-      });
+      let resp;
+      try {
+        resp = await sendMsg({
+          type: "SAVE_CARD",
+          payload: {
+            front: f,
+            back: b,
+            deckName: d,
+            tags: ["web-clip", host_tag].filter(Boolean),
+            sourceUrl: pageUrl,
+          },
+        });
+      } catch (e) {
+        saveBtn.disabled = false;
+        setStatus(status, `Extension error: ${e.message}. Try reopening the panel.`, "error");
+        return;
+      }
       saveBtn.disabled = false;
       if (!resp || resp.error) {
         setStatus(status, resp?.error || "Save failed.", "error");
@@ -269,7 +304,13 @@
     });
 
     (async () => {
-      const profResp = await sendMsg({ type: "GET_PROFILES" });
+      let profResp;
+      try {
+        profResp = await sendMsg({ type: "GET_PROFILES" });
+      } catch (e) {
+        setStatus(status, `Extension error: ${e.message}. Try reopening the panel.`, "error");
+        return;
+      }
       if (profResp?.error) {
         setStatus(status, `Anki not reachable: ${profResp.error}. Is Anki open with AnkiConnect installed?`, "error");
         return;
@@ -293,10 +334,16 @@
 
       if (currentProfile) {
         setStatus(status, `Loading Anki profile ${currentProfile}…`, "info");
-        const swResp = await sendMsg({
-          type: "SWITCH_PROFILE",
-          payload: { name: currentProfile },
-        });
+        let swResp;
+        try {
+          swResp = await sendMsg({
+            type: "SWITCH_PROFILE",
+            payload: { name: currentProfile },
+          });
+        } catch (e) {
+          setStatus(status, `Extension error: ${e.message}. Try reopening the panel.`, "error");
+          return;
+        }
         if (swResp?.error) {
           setStatus(status, `Could not load profile ${currentProfile}: ${swResp.error}`, "error");
           return;
@@ -307,7 +354,10 @@
       const decks = await loadDecksForCurrentProfile();
       regenBtn.dataset.decks = JSON.stringify(decks);
       await generate(decks);
-    })();
+    })().catch((e) => {
+      console.error("Anki panel initialization failed:", e);
+      setStatus(status, `Initialization error: ${e.message}`, "error");
+    });
   }
 
   function hostnameTag(url) {
