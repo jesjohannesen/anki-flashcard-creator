@@ -36,23 +36,26 @@ floatingEl.addEventListener("change", () => {
 });
 
 chrome.storage.sync.get(
-  ["geminiApiKey", "modelName", "floatingButtonEnabled", "aiProvider"],
-  ({ geminiApiKey, modelName, floatingButtonEnabled, aiProvider }) => {
-    keyEl.value = geminiApiKey || "";
+  ["modelName", "floatingButtonEnabled", "aiProvider"],
+  ({ modelName, floatingButtonEnabled, aiProvider }) => {
     modelEl.value = modelName || "Basic";
     floatingEl.checked = floatingButtonEnabled !== false;
     providerEl.value = aiProvider || "gemini-api";
     applyProviderUi();
   }
 );
+chrome.storage.local.get(["geminiApiKey"], ({ geminiApiKey }) => {
+  keyEl.value = geminiApiKey || "";
+});
 
 document.getElementById("save").addEventListener("click", () => {
   const geminiApiKey = keyEl.value.trim();
   const modelName = modelEl.value.trim() || "Basic";
   const floatingButtonEnabled = floatingEl.checked;
   const aiProvider = providerEl.value;
+  chrome.storage.local.set({ geminiApiKey });
   chrome.storage.sync.set(
-    { geminiApiKey, modelName, floatingButtonEnabled, aiProvider },
+    { modelName, floatingButtonEnabled, aiProvider },
     () => {
       statusEl.textContent = "Saved.";
       setTimeout(() => (statusEl.textContent = ""), 1500);

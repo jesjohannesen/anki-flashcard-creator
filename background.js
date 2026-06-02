@@ -2,7 +2,7 @@ const MENU_ID = "create-anki-flashcard";
 const ANKI_URL = "http://127.0.0.1:8765";
 const GEMINI_MODEL = "gemini-2.5-flash";
 
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   chrome.contextMenus.create({
     id: MENU_ID,
     title: "Create Anki flashcard from selection",
@@ -10,6 +10,13 @@ chrome.runtime.onInstalled.addListener((details) => {
   });
   if (details.reason === "install") {
     chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
+  }
+
+  // Migrate geminiApiKey from sync → local so the key stays on-device only.
+  const { geminiApiKey } = await chrome.storage.sync.get(["geminiApiKey"]);
+  if (geminiApiKey) {
+    await chrome.storage.local.set({ geminiApiKey });
+    await chrome.storage.sync.remove("geminiApiKey");
   }
 });
 
@@ -114,7 +121,7 @@ function buildResponseSchema(decks) {
 }
 
 async function generateCardGemini({ selectionText, context, pageTitle, pageUrl, deckNames }) {
-  const { geminiApiKey } = await chrome.storage.sync.get(["geminiApiKey"]);
+  const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
   if (!geminiApiKey) {
     return { error: "No Gemini API key set. Open the extension Options page to add one." };
   }
@@ -123,10 +130,10 @@ async function generateCardGemini({ selectionText, context, pageTitle, pageUrl, 
   const prompt = buildPrompt({ selectionText, context, pageTitle, pageUrl, deckNames: decks });
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiApiKey)}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": geminiApiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -267,14 +274,16 @@ async function saveCard({ front, back, deckName, tags, sourceUrl }) {
   const { modelName } = await chrome.storage.sync.get(["modelName"]);
   const noteModel = modelName || "Basic";
 
+  const safeFront = textToAnkiHtml(front);
+  const safeBack = textToAnkiHtml(back);
   const backWithSource = sourceUrl
-    ? `${back}\n\n<hr><a href="${escapeHtml(sourceUrl)}">source</a>`
-    : back;
+    ? `${safeBack}<br><br><hr><a href="${escapeHtml(sourceUrl)}">source</a>`
+    : safeBack;
 
   const note = {
     deckName,
     modelName: noteModel,
-    fields: { Front: front, Back: backWithSource },
+    fields: { Front: safeFront, Back: backWithSource },
     options: { allowDuplicate: false, duplicateScope: "deck" },
     tags: tags && tags.length ? tags : ["web-clip"],
   };
@@ -302,4 +311,8 @@ function escapeHtml(s) {
     '"': "&quot;",
     "'": "&#39;",
   }[c]));
+}
+
+function textToAnkiHtml(s) {
+  return escapeHtml(s).replace(/\n/g, "<br>");
 }
