@@ -83,6 +83,12 @@ $("save-ai").addEventListener("click", () => {
     }
     payload.geminiApiKey = k;
   }
+  const localPayload = {};
+  if (payload.geminiApiKey) {
+    localPayload.geminiApiKey = payload.geminiApiKey;
+    delete payload.geminiApiKey;
+  }
+  if (Object.keys(localPayload).length) chrome.storage.local.set(localPayload);
   chrome.storage.sync.set(payload, () => {
     if (chrome.runtime.lastError) {
       setStatus(aiStatus, `Save failed: ${chrome.runtime.lastError.message}`, "error");
@@ -110,14 +116,13 @@ $("close-welcome").addEventListener("click", () => {
 
 // --- Restore prior settings if the page is re-opened ---
 chrome.storage.sync.get(
-  ["aiProvider", "geminiApiKey", "floatingButtonEnabled", "onboardingAnkiconnectConfirmed", "onboardingPermissionGranted"],
+  ["aiProvider", "floatingButtonEnabled", "onboardingAnkiconnectConfirmed", "onboardingPermissionGranted"],
   (s) => {
     if (chrome.runtime.lastError) {
       console.warn("Failed to restore settings:", chrome.runtime.lastError.message);
       return;
     }
     providerEl.value = s.aiProvider || "gemini-api";
-    keyEl.value = s.geminiApiKey || "";
     floatingEl.checked = s.floatingButtonEnabled !== false;
     applyProviderVisibility();
     if (s.onboardingAnkiconnectConfirmed) markDone("step-ankiconnect");
@@ -125,6 +130,9 @@ chrome.storage.sync.get(
     if (s.aiProvider) markDone("step-ai");
   }
 );
+chrome.storage.local.get(["geminiApiKey"], ({ geminiApiKey }) => {
+  keyEl.value = geminiApiKey || "";
+});
 
 // Persist progress checkpoints when steps complete.
 new MutationObserver(() => {
