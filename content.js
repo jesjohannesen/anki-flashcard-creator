@@ -456,4 +456,17 @@
       "'": "&#39;",
     }[c]));
   }
+
+  // Allow importing in Node.js for testing while keeping browser behavior unchanged.
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+      hostnameTag,
+      escapeHtml,
+      setStatus,
+      makeDraggable,
+      renderPanel,
+      getSelectionContext,
+      getLiveSelectionText,
+    };
+  }
 })();

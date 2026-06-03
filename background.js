@@ -303,3 +303,18 @@ function escapeHtml(s) {
     "'": "&#39;",
   }[c]));
 }
+
+// Allow importing in Node.js for testing while keeping browser behavior unchanged.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    buildResponseSchema,
+    buildPrompt,
+    escapeHtml,
+    ankiInvoke,
+    saveCard,
+    generateCard,
+    generateCardGemini,
+    generateCardChromeBuiltin,
+    openPanelOnTab,
+  };
+}
