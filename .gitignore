@@ -10,6 +10,10 @@ __pycache__/
 *.crx
 *.pem
 
+# Node
+node_modules/
+coverage/
+
 # Editors
 .vscode/
 .idea/

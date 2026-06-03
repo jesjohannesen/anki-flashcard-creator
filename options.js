@@ -26,13 +26,21 @@ providerEl.addEventListener("change", () => {
   applyProviderUi();
   // Persist immediately so the change takes effect without needing to click Save.
   chrome.storage.sync.set({ aiProvider: providerEl.value }, () => {
+    if (chrome.runtime.lastError) {
+      statusEl.textContent = `Failed to save provider: ${chrome.runtime.lastError.message}`;
+      return;
+    }
     statusEl.textContent = `Provider set to ${providerEl.options[providerEl.selectedIndex].textContent}.`;
     setTimeout(() => (statusEl.textContent = ""), 2000);
   });
 });
 
 floatingEl.addEventListener("change", () => {
-  chrome.storage.sync.set({ floatingButtonEnabled: floatingEl.checked });
+  chrome.storage.sync.set({ floatingButtonEnabled: floatingEl.checked }, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("Failed to save floating button preference:", chrome.runtime.lastError.message);
+    }
+  });
 });
 
 chrome.storage.sync.get(
@@ -57,6 +65,10 @@ document.getElementById("save").addEventListener("click", () => {
   chrome.storage.sync.set(
     { modelName, floatingButtonEnabled, aiProvider },
     () => {
+      if (chrome.runtime.lastError) {
+        statusEl.textContent = `Save failed: ${chrome.runtime.lastError.message}`;
+        return;
+      }
       statusEl.textContent = "Saved.";
       setTimeout(() => (statusEl.textContent = ""), 1500);
     }

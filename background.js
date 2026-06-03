@@ -1,3 +1,5 @@
+importScripts("shared.js");
+
 const MENU_ID = "create-anki-flashcard";
 const ANKI_URL = "http://127.0.0.1:8765";
 const GEMINI_MODEL = "gemini-2.5-flash";
@@ -42,8 +44,9 @@ async function openPanelOnTab(tab, selectionText, pageUrl) {
       target: { tabId: tab.id },
       files: ["content.js"],
     });
-  } catch {
-    // Static content script may already be running, or page is restricted.
+  } catch (e) {
+    // Content script may already be injected, or page is restricted (chrome://, Web Store).
+    console.warn("Could not inject content script (tab %d):", tab.id, e?.message || e);
   }
   try {
     await chrome.tabs.sendMessage(tab.id, {
@@ -214,10 +217,14 @@ async function generateCardChromeBuiltin({ selectionText, context, pageTitle, pa
   try {
     raw = await session.prompt(prompt, { responseConstraint: buildResponseSchema(decks) });
   } catch (e) {
-    try { session.destroy?.(); } catch {}
+    try { session.destroy?.(); } catch (destroyErr) {
+      console.warn("Built-in AI session cleanup failed:", destroyErr?.message || destroyErr);
+    }
     return { error: `Built-in AI prompt failed: ${e.message}` };
   }
-  try { session.destroy?.(); } catch {}
+  try { session.destroy?.(); } catch (destroyErr) {
+    console.warn("Built-in AI session cleanup failed:", destroyErr?.message || destroyErr);
+  }
 
   let parsed;
   try {
@@ -287,16 +294,31 @@ async function saveCard({ front, back, deckName, tags, sourceUrl }) {
     options: { allowDuplicate: false, duplicateScope: "deck" },
     tags: tags && tags.length ? tags : ["web-clip"],
   };
-  const id = await ankiInvoke("addNote", { note });
+  let id;
+  try {
+    id = await ankiInvoke("addNote", { note });
+  } catch (e) {
+    if (/duplicate/i.test(e.message)) {
+      return { error: "Duplicate card — a note with the same Front field already exists in this deck." };
+    }
+    throw e;
+  }
   return { noteId: id };
 }
 
 async function ankiInvoke(action, params = {}) {
-  const res = await fetch(ANKI_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, version: 6, params }),
-  });
+  let res;
+  try {
+    res = await fetch(ANKI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, version: 6, params }),
+    });
+  } catch (e) {
+    throw new Error(
+      "Could not connect to Anki. Make sure Anki is running with AnkiConnect installed."
+    );
+  }
   if (!res.ok) throw new Error(`AnkiConnect HTTP ${res.status}`);
   const data = await res.json();
   if (data.error) throw new Error(`AnkiConnect: ${data.error}`);
