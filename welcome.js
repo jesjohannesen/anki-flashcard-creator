@@ -6,11 +6,6 @@ function markDone(stepId) {
   $(stepId)?.classList.add("done");
 }
 
-function setStatus(el, text, kind) {
-  el.textContent = text;
-  el.dataset.kind = kind || "info";
-}
-
 // --- Step 1: AnkiConnect installed ---
 $("open-ankiconnect").addEventListener("click", () => {
   chrome.tabs.create({ url: "https://ankiweb.net/shared/info/2055492159" });
@@ -139,14 +134,3 @@ new MutationObserver(() => {
   if (Object.keys(updates).length) chrome.storage.sync.set(updates);
 }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
 
-function sendMsg(msg) {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(msg, (r) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-      } else {
-        resolve(r);
-      }
-    });
-  });
-}

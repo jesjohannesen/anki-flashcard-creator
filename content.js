@@ -143,17 +143,6 @@
 
     closeBtn.addEventListener("click", () => host.remove());
 
-    const sendMsg = (msg) =>
-      new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(msg, (r) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            resolve(r);
-          }
-        });
-      });
-
     const populateDecks = (decks, preselect) =>
       new Promise((resolve) => {
         chrome.storage.sync.get(["lastDeckByProfile"], ({ lastDeckByProfile }) => {
@@ -368,11 +357,6 @@
     }
   }
 
-  function setStatus(el, text, kind) {
-    el.textContent = text;
-    el.dataset.kind = kind;
-  }
-
   function makeDraggable(host, handle) {
     let dragging = false;
     let startX = 0, startY = 0;
@@ -495,28 +479,5 @@
   </div>
 </div>
     `;
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[c]));
-  }
-
-  // Allow importing in Node.js for testing while keeping browser behavior unchanged.
-  if (typeof module !== "undefined" && module.exports) {
-    module.exports = {
-      hostnameTag,
-      escapeHtml,
-      setStatus,
-      makeDraggable,
-      renderPanel,
-      getSelectionContext,
-      getLiveSelectionText,
-    };
   }
 })();
