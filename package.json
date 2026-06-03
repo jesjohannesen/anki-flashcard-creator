@@ -1,0 +1,12 @@
+{
+  "name": "anki-flashcard-creator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

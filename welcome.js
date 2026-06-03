@@ -18,7 +18,13 @@ $("confirm-ankiconnect").addEventListener("click", () => {
 $("grant-permission").addEventListener("click", async () => {
   const status = $("permission-status");
   setStatus(status, "Pinging Anki…", "info");
-  const ping = await sendMsg({ type: "ANKI_PING" });
+  let ping;
+  try {
+    ping = await sendMsg({ type: "ANKI_PING" });
+  } catch (e) {
+    setStatus(status, `Extension error: ${e.message}`, "error");
+    return;
+  }
   if (ping?.error) {
     setStatus(
       status,
@@ -28,7 +34,13 @@ $("grant-permission").addEventListener("click", async () => {
     return;
   }
   setStatus(status, "Asking Anki to allow this extension — check Anki for a popup and click Yes.", "info");
-  const resp = await sendMsg({ type: "REQUEST_ANKI_PERMISSION" });
+  let resp;
+  try {
+    resp = await sendMsg({ type: "REQUEST_ANKI_PERMISSION" });
+  } catch (e) {
+    setStatus(status, `Extension error: ${e.message}`, "error");
+    return;
+  }
   if (resp?.error) {
     setStatus(status, `Failed: ${resp.error}`, "error");
     return;
@@ -72,6 +84,10 @@ $("save-ai").addEventListener("click", () => {
     payload.geminiApiKey = k;
   }
   chrome.storage.sync.set(payload, () => {
+    if (chrome.runtime.lastError) {
+      setStatus(aiStatus, `Save failed: ${chrome.runtime.lastError.message}`, "error");
+      return;
+    }
     setStatus(aiStatus, "✓ Saved.", "success");
     markDone("step-ai");
   });
@@ -80,7 +96,11 @@ $("save-ai").addEventListener("click", () => {
 // --- Step 4: Preferences ---
 const floatingEl = $("floating");
 floatingEl.addEventListener("change", () => {
-  chrome.storage.sync.set({ floatingButtonEnabled: floatingEl.checked });
+  chrome.storage.sync.set({ floatingButtonEnabled: floatingEl.checked }, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("Failed to save floating button preference:", chrome.runtime.lastError.message);
+    }
+  });
 });
 
 // --- Step 5: Done ---
@@ -92,6 +112,10 @@ $("close-welcome").addEventListener("click", () => {
 chrome.storage.sync.get(
   ["aiProvider", "geminiApiKey", "floatingButtonEnabled", "onboardingAnkiconnectConfirmed", "onboardingPermissionGranted"],
   (s) => {
+    if (chrome.runtime.lastError) {
+      console.warn("Failed to restore settings:", chrome.runtime.lastError.message);
+      return;
+    }
     providerEl.value = s.aiProvider || "gemini-api";
     keyEl.value = s.geminiApiKey || "";
     floatingEl.checked = s.floatingButtonEnabled !== false;
